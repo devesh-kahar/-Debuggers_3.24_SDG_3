@@ -2,57 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Primary Colors - Soft & Calming
-  static const Color primaryPink = Color(0xFFE91E63);
-  static const Color primaryTeal = Color(0xFF26A69A);
-  static const Color lavender = Color(0xFFE1BEE7);
+  // Primary Colors - Soft & Calming Light Pink Theme
+  static const Color primaryPink = Color(0xFFFF80AB); // Soft Pink
+  static const Color deepPink = Color(0xFFF06292);
+  static const Color primaryTeal = Color(0xFF4DB6AC);
+  static const Color lavender = Color(0xFFF3E5F5);
   
   // Fertility Mode Colors
-  static const Color periodRed = Color(0xFFEF5350);
-  static const Color fertileGreen = Color(0xFF66BB6A);
-  static const Color ovulationDarkGreen = Color(0xFF2E7D32);
-  static const Color safeBlue = Color(0xFF42A5F5);
-  static const Color unknownGrey = Color(0xFFBDBDBD);
+  static const Color periodRed = Color(0xFFFF5252);
+  static const Color fertileGreen = Color(0xFF81C784);
+  static const Color ovulationDarkGreen = Color(0xFF388E3C);
+  static const Color safeBlue = Color(0xFF64B5F6);
+  static const Color unknownGrey = Color(0xFFE0E0E0);
   
   // Risk Level Colors
-  static const Color riskLow = Color(0xFF4CAF50);
-  static const Color riskMedium = Color(0xFFFFC107);
-  static const Color riskHigh = Color(0xFFFF5252);
+  static const Color riskLow = Color(0xFF66BB6A);
+  static const Color riskMedium = Color(0xFFFFD54F);
+  static const Color riskHigh = Color(0xFFFF8A80);
   
   // Status Colors
-  static const Color success = Color(0xFF81C784);
-  static const Color warning = Color(0xFFFFB74D);
-  static const Color error = Color(0xFFE57373);
-  static const Color info = Color(0xFF64B5F6);
+  static const Color success = Color(0xFFA5D6A7);
+  static const Color warning = Color(0xFFFFCC80);
+  static const Color error = Color(0xFFEF9A9A);
+  static const Color info = Color(0xFF90CAF9);
   
   // Neutral Colors
-  static const Color textDark = Color(0xFF212121);
-  static const Color textMedium = Color(0xFF616161);
-  static const Color textLight = Color(0xFF9E9E9E);
-  static const Color background = Color(0xFFFAFAFA);
+  static const Color textDark = Color(0xFF4A4A4A);
+  static const Color textMedium = Color(0xFF757575);
+  static const Color textLight = Color(0xFFBDBDBD);
+  static const Color background = Color(0xFFFFF5F8); // Very Light Pink Background
   static const Color cardBackground = Color(0xFFFFFFFF);
-  static const Color divider = Color(0xFFEEEEEE);
+  static const Color divider = Color(0xFFFCE4EC);
   
   // Dark Mode Colors
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E1E);
-  static const Color darkCard = Color(0xFF2C2C2C);
+  static const Color darkBackground = Color(0xFF2D1B22); // Deep Berry
+  static const Color darkSurface = Color(0xFF3D242E);
+  static const Color darkCard = Color(0xFF4D2D3A);
+  
+  // Light Mode Colors (extended)
+  static const Color accentPink = Color(0xFFF48FB1);
   
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFEC407A), Color(0xFFAB47BC)],
+    colors: [Color(0xFFFF80AB), Color(0xFFF06292)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   
   static const LinearGradient fertilityGradient = LinearGradient(
-    colors: [Color(0xFF26A69A), Color(0xFF66BB6A)],
+    colors: [Color(0xFFF8BBD0), Color(0xFFFF80AB)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   
   static const LinearGradient pregnancyGradient = LinearGradient(
-    colors: [Color(0xFFEC407A), Color(0xFFFFB74D)],
+    colors: [Color(0xFFFF80AB), Color(0xFFFFCCBC)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

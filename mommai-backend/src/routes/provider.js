@@ -455,4 +455,35 @@ router.put('/clinic/alerts/:id/read', async (req, res) => {
     }
 });
 
+// Clinic Simulation for Demo
+router.post('/clinic/simulate', async (req, res) => {
+    try {
+        const patients = await User.find({ role: 'patient' });
+        if (patients.length === 0) return res.status(404).json({ error: 'No patients to simulate' });
+
+        const randomPatient = patients[Math.floor(Math.random() * patients.length)];
+
+        // Create a fake high BP alert
+        const alert = new Alert({
+            patientId: randomPatient._id,
+            type: Math.random() > 0.5 ? 'critical' : 'warning',
+            title: 'Anomalous BP Detected',
+            message: `Simulated live data: ${randomPatient.name} recorded BP 145/95 mmHg.`,
+            isRead: false
+        });
+        await alert.save();
+
+        // Broadcast live update
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('new-alert', { alert, patient: randomPatient });
+            io.emit('dashboard-update');
+        }
+
+        res.json({ message: 'Simulation triggered', patient: randomPatient.name });
+    } catch (error) {
+        res.status(500).json({ error: 'Simulation failed' });
+    }
+});
+
 module.exports = router;

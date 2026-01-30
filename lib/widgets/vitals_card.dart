@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class VitalsCard extends StatelessWidget {
   final IconData icon;
@@ -43,13 +44,16 @@ class VitalsCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),
-              ),
+              ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+               .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 1000.ms),
               const Spacer(),
               Container(
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
+              ).animate(onPlay: (controller) => controller.repeat())
+               .scale(begin: const Offset(1, 1), end: const Offset(2, 2), duration: 1500.ms)
+               .fadeOut(),
             ],
           ),
           const SizedBox(height: 12),

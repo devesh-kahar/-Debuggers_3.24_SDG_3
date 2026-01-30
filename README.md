@@ -25,9 +25,15 @@
 **MomAI** is a comprehensive maternal health application that leverages artificial intelligence to provide personalized health insights, real-time risk assessment, and seamless communication between pregnant mothers and healthcare providers.
 
 The platform consists of three main components:
-- 📱 **Flutter Mobile App** - Patient-facing application for mothers
-- 🖥️ **Next.js Dashboard** - Healthcare provider portal
-- ⚙️ **Node.js Backend** - API server with AI integration
+- 📱 **Flutter Mobile App** - Patient-facing application with real-time health pulse animations.
+- 🖥️ **Next.js Dashboard** - Healthcare provider portal with **Live Sync** (Socket.io) for instant monitoring.
+- ⚙️ **Node.js Backend** - API server with **AI Contextual Analysis** and **Auto-Simulated Data Streams**.
+
+## ⚡ Real-Time Live Sync (Hackathon Special)
+Unlike static mockups, MomAI features a fully functional **Real-Time Data Pipeline**:
+*   **Instant Dashboard Updates**: When a patient logs a vital on the mobile app, the dashboard updates *without* refreshing.
+*   **Live Simulation Mode**: A "Simulate" button on the dashboard allows judges to see real-time data flowing into the clinical view effortlessly.
+*   **Active Risk Flagging**: The system automatically triggers critical alerts across all platforms the moment an anomaly is detected.
 
 ---
 

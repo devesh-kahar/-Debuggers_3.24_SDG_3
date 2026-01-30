@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Users, AlertTriangle, Calendar, MessageSquare, TrendingUp, TrendingDown, ArrowRight, Activity } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Users, AlertTriangle, Calendar, MessageSquare, TrendingUp, TrendingDown, ArrowRight, Activity, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { io } from 'socket.io-client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -11,27 +12,59 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const socketRef = useRef<any>(null);
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/provider/clinic/dashboard`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const json = await res.json();
+      setData(json);
+      setError(null);
+    } catch (e) {
+      console.error('Failed to fetch dashboard data', e);
+      setError('Unable to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${API_URL}/provider/clinic/dashboard`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const json = await res.json();
-        setData(json);
-        setError(null);
-      } catch (e) {
-        console.error('Failed to fetch dashboard data', e);
-        setError('Unable to connect to server');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
 
-    // Refresh every 10 seconds for real-time updates
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
+    // Setup Socket.io
+    const socketServer = API_URL.replace('/api', '');
+    socketRef.current = io(socketServer);
+
+    socketRef.current.on('connect', () => {
+      console.log('Connected to Real-time Sync');
+    });
+
+    // Listen for any health updates or alerts
+    socketRef.current.on('new-alert', (alert: any) => {
+      console.log('Real-time Alert Received:', alert);
+      fetchData(); // Instant refresh
+    });
+
+    socketRef.current.on('dashboard-update', () => {
+      fetchData();
+    });
+
+    const interval = setInterval(fetchData, 30000); // Polling as backup
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+      clearInterval(interval);
+    };
   }, []);
+
+  const simulateData = async () => {
+    try {
+      await fetch(`${API_URL}/provider/clinic/simulate`, { method: 'POST' });
+      // The socket will trigger the refresh
+    } catch (e) {
+      console.error('Simulation failed');
+    }
+  };
 
   if (loading) {
     return (
@@ -74,9 +107,16 @@ export default function Dashboard() {
           <p className="text-slate-500">Real-time Maternal Health Monitoring</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={simulateData}
+            className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            Simulate Live Data
+          </button>
           <span className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Live
+            Sync Active
           </span>
           <button className="px-4 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600 transition-colors flex items-center gap-2">
             <Calendar className="w-4 h-4" />

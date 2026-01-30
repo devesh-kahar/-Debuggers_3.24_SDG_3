@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
+  // Use http://10.0.2.2:5000/api for Android Emulator
+  // Use your computer's local IP (e.g., http://192.168.1.5:5000/api) for physical devices
   static const String baseUrl = 'http://localhost:5000/api';
   final Dio _dio = Dio();
   final _storage = const FlutterSecureStorage();
