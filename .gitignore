@@ -44,10 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Avoid ignoring the main README
-!README.md
+# Ignore all markdown files
 *.md
 **/*.md
+# EXCEPT for the main project README
+!README.md
 
 # Dependency directories
 node_modules/
