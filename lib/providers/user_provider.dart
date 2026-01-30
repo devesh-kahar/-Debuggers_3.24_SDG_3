@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../utils/constants.dart';
+import '../services/api_service.dart';
+import '../services/socket_service.dart';
+import '../services/fcm_service.dart';
 
 class UserProvider extends ChangeNotifier {
+  final ApiService _api = ApiService();
   User? _user;
   bool _isLoading = false;
+  String? _token;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
@@ -13,6 +18,103 @@ class UserProvider extends ChangeNotifier {
   String get currentMode => _user?.currentMode ?? AppConstants.modeFertility;
   bool get isFertilityMode => currentMode == AppConstants.modeFertility;
   bool get isPregnancyMode => currentMode == AppConstants.modePregnancy;
+  String? get token => _token;
+
+  // Initialize and check for existing session
+  Future<void> init() async {
+    _isLoading = true;
+    notifyListeners();
+
+    _token = await _api.getToken();
+    if (_token != null) {
+      try {
+        final response = await _api.dio.get('/auth/profile');
+        if (response.statusCode == 200) {
+          _user = User.fromJson(response.data);
+          SocketService().init(_user!.id);
+        }
+      } catch (e) {
+        await _api.deleteToken();
+        _token = null;
+      }
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Register
+  Future<bool> register(String name, String email, String password) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _api.dio.post('/auth/register', data: {
+        'name': name,
+        'email': email,
+        'password': password,
+      });
+
+      if (response.statusCode == 201) {
+        _token = response.data['token'];
+        _user = User.fromJson(response.data['user']);
+        await _api.saveToken(_token!);
+        
+        // Sync FCM Token
+        final fcmToken = await FcmService().getToken();
+        if (fcmToken != null) {
+          await _api.dio.post('/auth/update-fcm', data: {'fcmToken': fcmToken});
+        }
+        
+        SocketService().init(_user!.id);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Register error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  // Login
+  Future<bool> login(String email, String password) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _api.dio.post('/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+        _token = response.data['token'];
+        _user = User.fromJson(response.data['user']);
+        await _api.saveToken(_token!);
+        
+        // Sync FCM Token
+        final fcmToken = await FcmService().getToken();
+        if (fcmToken != null) {
+          await _api.dio.post('/auth/update-fcm', data: {'fcmToken': fcmToken});
+        }
+        
+        SocketService().init(_user!.id);
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
 
   // Initialize with demo user for hackathon
   void initDemoUser() {
@@ -46,10 +148,25 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update user
-  void updateUser(User Function(User) updater) {
+  // Update user profile info
+  void updateUser({
+    String? name,
+    int? age,
+    double? height,
+    double? weight,
+    String? currentMode,
+    bool? isOnboardingComplete,
+  }) {
     if (_user != null) {
-      _user = updater(_user!);
+      _user = _user!.copyWith(
+        name: name,
+        age: age,
+        height: height,
+        weight: weight,
+        currentMode: currentMode,
+        isOnboardingComplete: isOnboardingComplete,
+        updatedAt: DateTime.now(),
+      );
       notifyListeners();
     }
   }

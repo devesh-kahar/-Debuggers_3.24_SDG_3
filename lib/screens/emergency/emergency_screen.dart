@@ -28,7 +28,7 @@ class EmergencyScreen extends StatelessWidget {
             _buildWarningCard(context, 'Severe Headache + Vision Changes', 'Could indicate preeclampsia', Iconsax.eye),
             _buildWarningCard(context, 'Decreased Fetal Movement', 'No kicks for 2+ hours after 28 weeks', Iconsax.lovely),
             _buildWarningCard(context, 'Severe Abdominal Pain', 'Sharp or persistent cramping', Iconsax.flash),
-            _buildWarningCard(context, 'Water Breaking Early', 'Fluid leaking before 37 weeks', Iconsax.water),
+            _buildWarningCard(context, 'Water Breaking Early', 'Fluid leaking before 37 weeks', Iconsax.info_circle),
             _buildWarningCard(context, 'Difficulty Breathing', 'Chest pain or shortness of breath', Iconsax.wind),
             const SizedBox(height: 32),
 

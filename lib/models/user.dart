@@ -161,4 +161,54 @@ class User extends HiveObject {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+  // JSON serialization
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['_id'] ?? json['id'],
+      name: json['name'],
+      email: json['email'],
+      age: json['age'] ?? 25,
+      height: (json['height'] as num?)?.toDouble() ?? 160,
+      weight: (json['weight'] as num?)?.toDouble() ?? 60,
+      bloodType: json['bloodType'] ?? 'Unknown',
+      currentMode: json['currentMode'] ?? 'fertility',
+      lastPeriodDate: json['lastPeriodDate'] != null ? DateTime.parse(json['lastPeriodDate']) : null,
+      cycleLength: json['cycleLength'] ?? 28,
+      periodLength: json['periodLength'] ?? 5,
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      currentPregnancyWeek: json['currentPregnancyWeek'],
+      medicalConditions: List<String>.from(json['medicalConditions'] ?? []),
+      previousComplications: List<String>.from(json['previousComplications'] ?? []),
+      previousPregnancies: json['previousPregnancies'] ?? 0,
+      isOnboardingComplete: json['isOnboardingComplete'] ?? false,
+      preferredUnits: json['preferredUnits'] ?? 'metric',
+      isDarkMode: json['isDarkMode'] ?? false,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'age': age,
+      'height': height,
+      'weight': weight,
+      'bloodType': bloodType,
+      'currentMode': currentMode,
+      'lastPeriodDate': lastPeriodDate?.toIso8601String(),
+      'cycleLength': cycleLength,
+      'periodLength': periodLength,
+      'dueDate': dueDate?.toIso8601String(),
+      'currentPregnancyWeek': currentPregnancyWeek,
+      'medicalConditions': medicalConditions,
+      'previousComplications': previousComplications,
+      'previousPregnancies': previousPregnancies,
+      'isOnboardingComplete': isOnboardingComplete,
+      'preferredUnits': preferredUnits,
+      'isDarkMode': isDarkMode,
+    };
+  }
 }

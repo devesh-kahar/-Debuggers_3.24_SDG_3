@@ -107,4 +107,32 @@ class Symptom extends HiveObject {
     {'name': 'Regular Contractions', 'icon': '⏰', 'category': 'warning', 'urgent': false},
     {'name': 'Painful Urination', 'icon': '😖', 'category': 'warning', 'urgent': false},
   ];
+
+  // JSON serialization
+  factory Symptom.fromJson(Map<String, dynamic> json) {
+    return Symptom(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      date: DateTime.parse(json['date']),
+      type: json['type'],
+      severity: json['severity'] ?? 5,
+      category: json['category'] ?? 'physical',
+      isWarning: json['isWarning'] ?? false,
+      notes: json['notes'],
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'date': date.toIso8601String(),
+      'type': type,
+      'severity': severity,
+      'category': category,
+      'isWarning': isWarning,
+      'notes': notes,
+    };
+  }
 }

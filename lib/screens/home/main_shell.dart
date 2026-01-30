@@ -5,11 +5,14 @@ import 'package:iconsax/iconsax.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../providers/pregnancy_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../utils/theme.dart';
+import '../../widgets/gamification_widgets.dart'; // Add widget import
 import 'fertility_home.dart';
 import 'pregnancy_home.dart';
 import '../fertility/calendar_screen.dart';
 import '../chatbot/ai_chat_screen.dart';
+import '../gamification/gamification_screen.dart';
 import '../profile/profile_screen.dart';
 
 class MainShell extends StatefulWidget {
@@ -23,14 +26,38 @@ class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize gamification after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = context.read<UserProvider>();
+      if (userProvider.user != null) {
+        context.read<GamificationProvider>().init(userProvider.user!.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+    final gamificationProvider = context.watch<GamificationProvider>();
     final isFertilityMode = userProvider.isFertilityMode;
+
+    // Check for unlocked badges
+    if (gamificationProvider.hasNewBadges) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final badges = context.read<GamificationProvider>().consumeNewBadges();
+        for (final badge in badges) {
+          BadgeUnlockDialog.show(context, badge);
+        }
+      });
+    }
 
     final screens = [
       isFertilityMode ? const FertilityHome() : const PregnancyHome(),
       const CalendarScreen(),
       const AIChatScreen(),
+      const GamificationScreen(),
       const ProfileScreen(),
     ];
 
@@ -82,7 +109,11 @@ class _MainShellState extends State<MainShell> {
                 label: 'AI Chat',
               ),
               BottomNavigationBarItem(
-                icon: Icon(_currentIndex == 3 ? Iconsax.user5 : Iconsax.user),
+                icon: Icon(_currentIndex == 3 ? Iconsax.cup5 : Iconsax.cup),
+                label: 'Rewards',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(_currentIndex == 4 ? Iconsax.user5 : Iconsax.user),
                 label: 'Profile',
               ),
             ],

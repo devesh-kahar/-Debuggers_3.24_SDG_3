@@ -2,17 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/notification_service.dart';
 
 import 'utils/theme.dart';
 import 'providers/user_provider.dart';
 import 'providers/cycle_provider.dart';
 import 'providers/pregnancy_provider.dart';
 import 'providers/chat_provider.dart';
+import 'providers/gamification_provider.dart';
 import 'screens/home/main_shell.dart';
 import 'screens/auth/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(NotificationService.firebaseBackgroundHandler);
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -42,6 +50,7 @@ class MomAIApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CycleProvider()),
         ChangeNotifierProvider(create: (_) => PregnancyProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => GamificationProvider()),
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProvider, _) {
@@ -73,28 +82,35 @@ class _AppRouterState extends State<AppRouter> {
   void initState() {
     super.initState();
     _initializeApp();
+    _initNotifications();
   }
 
-  void _initializeApp() {
-    // Initialize demo data for hackathon
+  Future<void> _initNotifications() async {
+    await NotificationService().init();
+    
+    // Set up notification tap handler
+    NotificationService().onNotificationTap = (payload) {
+      debugPrint('Notification tapped with payload: $payload');
+      // Navigate based on payload
+      // TODO: Add navigation logic based on payload type
+    };
+  }
+
+  Future<void> _initializeApp() async {
     final userProvider = context.read<UserProvider>();
     final cycleProvider = context.read<CycleProvider>();
     final pregnancyProvider = context.read<PregnancyProvider>();
 
-    // Auto-login demo user
-    userProvider.initDemoUser();
+    // Check for existing session
+    await userProvider.init();
     
-    // Initialize cycle data
-    cycleProvider.initDemoData(
-      DateTime.now().subtract(const Duration(days: 14)),
-      28,
-      5,
-    );
-    
-    // Initialize pregnancy data (for demo switching)
-    pregnancyProvider.initPregnancy(
-      DateTime.now().subtract(const Duration(days: 168)), // ~24 weeks
-    );
+    // If logged in, fetch related data
+    if (userProvider.isLoggedIn) {
+      await cycleProvider.fetchCycleData();
+      if (userProvider.isPregnancyMode) {
+        await pregnancyProvider.fetchPregnancyData(userProvider.user!.id);
+      }
+    }
   }
 
   @override

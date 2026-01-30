@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/pregnancy.dart';
 import '../models/symptom.dart';
+import '../services/api_service.dart';
 
 class PregnancyProvider extends ChangeNotifier {
+  final ApiService _api = ApiService();
   Pregnancy? _pregnancy;
   List<Vitals> _vitals = [];
   List<Symptom> _symptoms = [];
   List<FetalMovement> _fetalMovements = [];
   List<Contraction> _contractions = [];
   final _uuid = const Uuid();
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
   
   // Contraction timer state
   bool _isTimingContraction = false;
@@ -31,122 +36,111 @@ class PregnancyProvider extends ChangeNotifier {
   double get riskScore => _pregnancy?.riskScore ?? 0;
   String get riskLevel => _pregnancy?.riskLevel ?? 'low';
 
-  // Initialize pregnancy
-  void initPregnancy(DateTime lastMenstrualPeriod) {
-    final dueDate = Pregnancy.calculateDueDate(lastMenstrualPeriod);
-    final currentWeek = Pregnancy.calculateCurrentWeek(lastMenstrualPeriod);
-    
-    _pregnancy = Pregnancy(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      lastMenstrualPeriod: lastMenstrualPeriod,
-      dueDate: dueDate,
-      currentWeek: currentWeek,
-      currentDay: (DateTime.now().difference(lastMenstrualPeriod).inDays % 7) + 1,
-      riskScore: 25, // Start with low baseline
-      riskLevel: 'low',
-      riskFactors: [],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    
-    _initDemoVitals();
+  // Fetch pregnancy and vitals from backend
+  Future<void> fetchPregnancyData(String userId) async {
+    _isLoading = true;
     notifyListeners();
-  }
 
-  // Initialize demo vitals for hackathon
-  void _initDemoVitals() {
-    final now = DateTime.now();
-    
-    // Add some BP readings
-    for (int i = 30; i >= 0; i -= 3) {
-      _vitals.add(Vitals(
-        id: _uuid.v4(),
-        oderId: 'demo-user-001',
-        date: now.subtract(Duration(days: i)),
-        type: 'bp',
-        value: 115 + (i % 10).toDouble(), // Systolic
-        secondaryValue: 75 + (i % 5).toDouble(), // Diastolic
-        timeOfDay: 'morning',
-        createdAt: now.subtract(Duration(days: i)),
-      ));
+    try {
+      final pregResponse = await _api.dio.get('/pregnancy/active');
+      if (pregResponse.statusCode == 200 && pregResponse.data != null) {
+        _pregnancy = Pregnancy.fromJson(pregResponse.data);
+      }
+
+      final vitalsResponse = await _api.dio.get('/pregnancy/vitals');
+      if (vitalsResponse.statusCode == 200) {
+        _vitals = (vitalsResponse.data as List).map((v) => Vitals.fromJson(v)).toList();
+      }
+
+      final symptomsResponse = await _api.dio.get('/pregnancy/symptoms');
+      if (symptomsResponse.statusCode == 200) {
+        _symptoms = (symptomsResponse.data as List).map((s) => Symptom.fromJson(s)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching pregnancy data: $e');
     }
 
-    // Add weight readings
-    double baseWeight = 62;
-    for (int i = 30; i >= 0; i -= 7) {
-      _vitals.add(Vitals(
-        id: _uuid.v4(),
-        oderId: 'demo-user-001',
-        date: now.subtract(Duration(days: i)),
-        type: 'weight',
-        value: baseWeight + ((30 - i) / 10),
-        createdAt: now.subtract(Duration(days: i)),
-      ));
-    }
+    _isLoading = false;
+    notifyListeners();
   }
 
   // Log blood pressure
-  void logBloodPressure(double systolic, double diastolic, {String? notes}) {
-    final vital = Vitals(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      date: DateTime.now(),
-      type: 'bp',
-      value: systolic,
-      secondaryValue: diastolic,
-      timeOfDay: _getTimeOfDay(),
-      notes: notes,
-      createdAt: DateTime.now(),
-    );
-    
-    _vitals.add(vital);
-    _updateRiskScore();
-    notifyListeners();
+  Future<void> logBloodPressure(double systolic, double diastolic, {String? notes}) async {
+    final vitalJson = {
+      'type': 'bp',
+      'value': systolic,
+      'secondaryValue': diastolic,
+      'timeOfDay': _getTimeOfDay(),
+      'notes': notes,
+      'date': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      final response = await _api.dio.post('/pregnancy/vitals', data: vitalJson);
+      if (response.statusCode == 201) {
+        _vitals.add(Vitals.fromJson(response.data));
+        _updateRiskScore();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging BP: $e');
+    }
   }
 
   // Log weight
-  void logWeight(double weight) {
-    _vitals.add(Vitals(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      date: DateTime.now(),
-      type: 'weight',
-      value: weight,
-      createdAt: DateTime.now(),
-    ));
-    _updateRiskScore();
-    notifyListeners();
+  Future<void> logWeight(double weight) async {
+    try {
+      final response = await _api.dio.post('/pregnancy/vitals', data: {
+        'type': 'weight',
+        'value': weight,
+        'date': DateTime.now().toIso8601String(),
+      });
+      if (response.statusCode == 201) {
+        _vitals.add(Vitals.fromJson(response.data));
+        _updateRiskScore();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging weight: $e');
+    }
   }
 
   // Log blood sugar
-  void logBloodSugar(double value, {String mealContext = 'fasting'}) {
-    _vitals.add(Vitals(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      date: DateTime.now(),
-      type: 'bloodSugar',
-      value: value,
-      mealContext: mealContext,
-      createdAt: DateTime.now(),
-    ));
-    _updateRiskScore();
-    notifyListeners();
+  Future<void> logBloodSugar(double value, {String mealContext = 'fasting'}) async {
+    try {
+      final response = await _api.dio.post('/pregnancy/vitals', data: {
+        'type': 'bloodSugar',
+        'value': value,
+        'mealContext': mealContext,
+        'date': DateTime.now().toIso8601String(),
+      });
+      if (response.statusCode == 201) {
+        _vitals.add(Vitals.fromJson(response.data));
+        _updateRiskScore();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging blood sugar: $e');
+    }
   }
 
   // Log symptom
-  void logSymptom(String type, int severity, {bool isWarning = false}) {
-    _symptoms.add(Symptom(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      date: DateTime.now(),
-      type: type,
-      severity: severity,
-      isWarning: isWarning,
-      createdAt: DateTime.now(),
-    ));
-    _updateRiskScore();
-    notifyListeners();
+  Future<void> logSymptom(String type, int severity, {bool isWarning = false}) async {
+    try {
+      final response = await _api.dio.post('/pregnancy/symptoms', data: {
+        'type': type,
+        'severity': severity,
+        'isWarning': isWarning,
+        'date': DateTime.now().toIso8601String(),
+      });
+      if (response.statusCode == 201) {
+        _symptoms.add(Symptom.fromJson(response.data));
+        _updateRiskScore();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging symptom: $e');
+    }
   }
 
   // Start kick counter

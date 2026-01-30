@@ -43,3 +43,28 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Ignore all markdown files
+*.md
+**/*.md
+
+# Dependency directories
+node_modules/
+**/node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+**/.env
+**/.env.local
+
+# Next.js build
+.next/
+**/ .next/
+
+# Firebase service account
+firebase-service-account.json
+**/firebase-service-account.json
+

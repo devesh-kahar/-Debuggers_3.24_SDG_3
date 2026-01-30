@@ -66,7 +66,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       typeIcon = Iconsax.monitor;
     } else if (apt['type'] == 'lab') {
       typeColor = AppTheme.lavender;
-      typeIcon = Iconsax.flask;
+      typeIcon = Iconsax.chart_2;
     }
 
     return Container(

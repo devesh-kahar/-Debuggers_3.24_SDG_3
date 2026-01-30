@@ -5,10 +5,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/user_provider.dart';
 import '../../providers/cycle_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../utils/theme.dart';
 import '../../widgets/fertility_score_card.dart';
 import '../../widgets/quick_action_card.dart';
 import '../../widgets/cycle_info_card.dart';
+import '../../widgets/gamification_widgets.dart';
 
 class FertilityHome extends StatelessWidget {
   const FertilityHome({super.key});
@@ -17,6 +19,7 @@ class FertilityHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final cycleProvider = context.watch<CycleProvider>();
+    final gamificationProvider = context.watch<GamificationProvider>();
     final user = userProvider.user;
 
     return Scaffold(
@@ -30,24 +33,33 @@ class FertilityHome extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, ${user?.name ?? 'there'} 👋',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2),
-                        const SizedBox(height: 4),
-                        Text(
-                          'How are you feeling today?',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textLight,
-                          ),
-                        ).animate().fadeIn(delay: 200.ms),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${user?.name ?? 'there'} 👋',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2),
+                          const SizedBox(height: 4),
+                          Text(
+                            'How are you feeling today?',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textLight,
+                            ),
+                          ).animate().fadeIn(delay: 200.ms),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    // Streak Counter
+                    StreakWidget(
+                      currentStreak: gamificationProvider.currentStreak,
+                      isCompact: true,
+                    ).animate().fadeIn(delay: 150.ms).scale(begin: const Offset(0.8, 0.8)),
+                    const SizedBox(width: 8),
                     _buildModeToggle(context, userProvider),
                   ],
                 ),
@@ -212,6 +224,32 @@ class FertilityHome extends StatelessWidget {
               ),
             ),
 
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Gamification Summary Card
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Progress',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ).animate().fadeIn(delay: 950.ms),
+                    const SizedBox(height: 16),
+                    GamificationSummaryCard(
+                      streak: gamificationProvider.currentStreak,
+                      level: gamificationProvider.level,
+                      levelTitle: gamificationProvider.levelTitle,
+                      points: gamificationProvider.totalPoints,
+                      recentBadges: gamificationProvider.recentBadges,
+                    ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.1),
+                  ],
+                ),
+              ),
+            ),
+
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
@@ -359,6 +397,7 @@ class FertilityHome extends StatelessWidget {
   void _showSymptomLogger(BuildContext context, CycleProvider cycleProvider) {
     _showQuickLogSheet(context, 'Log Symptom', Iconsax.note_add, AppTheme.primaryPink, () {
       cycleProvider.logSymptom('Cramping', 5);
+      context.read<GamificationProvider>().recordLog(LogType.symptom);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Symptom logged! ✓')),
@@ -369,6 +408,7 @@ class FertilityHome extends StatelessWidget {
   void _showBBTLogger(BuildContext context, CycleProvider cycleProvider) {
     _showQuickLogSheet(context, 'Log Temperature', Iconsax.chart_2, AppTheme.primaryTeal, () {
       cycleProvider.logDailyEntry(bbtTemperature: 36.5);
+      context.read<GamificationProvider>().recordLog(LogType.bbt);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Temperature logged! ✓')),
@@ -379,6 +419,7 @@ class FertilityHome extends StatelessWidget {
   void _showMucusLogger(BuildContext context, CycleProvider cycleProvider) {
     _showQuickLogSheet(context, 'Cervical Mucus', Iconsax.drop, AppTheme.info, () {
       cycleProvider.logDailyEntry(cervicalMucus: 'eggWhite');
+      context.read<GamificationProvider>().recordLog(LogType.symptom);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cervical mucus logged! ✓')),
@@ -389,6 +430,7 @@ class FertilityHome extends StatelessWidget {
   void _showIntimacyLogger(BuildContext context, CycleProvider cycleProvider) {
     _showQuickLogSheet(context, 'Log Intimacy', Iconsax.heart, AppTheme.lavender, () {
       cycleProvider.logDailyEntry(hadIntercourse: true);
+      context.read<GamificationProvider>().recordLog(LogType.checkIn);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Intimacy logged! ✓')),

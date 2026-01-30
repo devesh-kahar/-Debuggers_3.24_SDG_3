@@ -34,6 +34,30 @@ class ChatMessage extends HiveObject {
     this.category,
     this.isLoading = false,
   });
+
+  // JSON serialization
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      content: json['content'] ?? '',
+      isUser: json['isUser'] ?? true,
+      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      category: json['category'],
+      isLoading: json['isLoading'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'content': content,
+      'isUser': isUser,
+      'timestamp': timestamp.toIso8601String(),
+      'category': category,
+    };
+  }
 }
 
 // Quick question presets for the AI chatbot

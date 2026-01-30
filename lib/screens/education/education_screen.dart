@@ -67,7 +67,7 @@ class EducationScreen extends StatelessWidget {
             // Popular Articles
             Text('Popular Articles', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildArticleCard(context, 'Signs You're Ovulating', 'Physical & emotional signs to look for', Iconsax.chart, AppTheme.primaryPink),
+            _buildArticleCard(context, "Signs You're Ovulating", 'Physical & emotional signs to look for', Iconsax.chart, AppTheme.primaryPink),
             _buildArticleCard(context, 'Week by Week Pregnancy Guide', 'What to expect each week', Iconsax.calendar, AppTheme.primaryTeal),
             _buildArticleCard(context, 'Warning Signs During Pregnancy', 'When to call your doctor', Iconsax.warning_2, AppTheme.warning),
             _buildArticleCard(context, 'Foods to Avoid While Pregnant', 'Nutrition safety guide', Iconsax.blend_2, AppTheme.error),

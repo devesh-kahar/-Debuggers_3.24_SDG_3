@@ -148,6 +148,41 @@ class Pregnancy extends HiveObject {
     currentDay = (daysSinceLMP % 7) + 1;
     updatedAt = DateTime.now();
   }
+
+  // JSON serialization
+  factory Pregnancy.fromJson(Map<String, dynamic> json) {
+    return Pregnancy(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      lastMenstrualPeriod: DateTime.parse(json['lastMenstrualPeriod']),
+      dueDate: DateTime.parse(json['dueDate']),
+      conceptionDate: json['conceptionDate'] != null ? DateTime.parse(json['conceptionDate']) : null,
+      currentWeek: json['currentWeek'] ?? 1,
+      currentDay: json['currentDay'] ?? 1,
+      riskScore: (json['riskScore'] as num?)?.toDouble() ?? 0,
+      riskLevel: json['riskLevel'] ?? 'low',
+      riskFactors: List<String>.from(json['riskFactors'] ?? []),
+      isActive: json['isActive'] ?? true,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'lastMenstrualPeriod': lastMenstrualPeriod.toIso8601String(),
+      'dueDate': dueDate.toIso8601String(),
+      'conceptionDate': conceptionDate?.toIso8601String(),
+      'currentWeek': currentWeek,
+      'currentDay': currentDay,
+      'riskScore': riskScore,
+      'riskLevel': riskLevel,
+      'riskFactors': riskFactors,
+      'isActive': isActive,
+    };
+  }
 }
 
 @HiveType(typeId: 4)
@@ -238,6 +273,36 @@ class Vitals extends HiveObject {
         return value.toString();
     }
   }
+
+  // JSON serialization
+  factory Vitals.fromJson(Map<String, dynamic> json) {
+    return Vitals(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      date: DateTime.parse(json['date']),
+      type: json['type'],
+      value: (json['value'] as num).toDouble(),
+      secondaryValue: (json['secondaryValue'] as num?)?.toDouble(),
+      timeOfDay: json['timeOfDay'],
+      mealContext: json['mealContext'],
+      notes: json['notes'],
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'date': date.toIso8601String(),
+      'type': type,
+      'value': value,
+      'secondaryValue': secondaryValue,
+      'timeOfDay': timeOfDay,
+      'mealContext': mealContext,
+      'notes': notes,
+    };
+  }
 }
 
 @HiveType(typeId: 5)
@@ -282,6 +347,33 @@ class FetalMovement extends HiveObject {
     if (durationMinutes >= 120 && kickCount < 10) return true;
     return false;
   }
+
+  // JSON serialization
+  factory FetalMovement.fromJson(Map<String, dynamic> json) {
+    return FetalMovement(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      date: DateTime.parse(json['date']),
+      kickCount: json['kickCount'] ?? 0,
+      durationMinutes: json['durationMinutes'] ?? 0,
+      startTime: DateTime.parse(json['startTime']),
+      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+      notes: json['notes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'date': date.toIso8601String(),
+      'kickCount': kickCount,
+      'durationMinutes': durationMinutes,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
+      'notes': notes,
+    };
+  }
 }
 
 @HiveType(typeId: 6)
@@ -321,5 +413,30 @@ class Contraction extends HiveObject {
   int get duration {
     if (endTime == null) return 0;
     return endTime!.difference(startTime).inSeconds;
+  }
+
+  // JSON serialization
+  factory Contraction.fromJson(Map<String, dynamic> json) {
+    return Contraction(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      startTime: DateTime.parse(json['startTime']),
+      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+      durationSeconds: json['durationSeconds'] ?? 0,
+      intensityRating: json['intensityRating'],
+      notes: json['notes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime?.toIso8601String(),
+      'durationSeconds': durationSeconds,
+      'intensityRating': intensityRating,
+      'notes': notes,
+    };
   }
 }

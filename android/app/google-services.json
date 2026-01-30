@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "831066730036",
+    "project_id": "momai-8a00d",
+    "storage_bucket": "momai-8a00d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831066730036:android:5d59733034a27e97856461",
+        "android_client_info": {
+          "package_name": "com.mommai.mommai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsNi8MjFxxqwsNdRIaToYjUuG3wX7QVCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../providers/user_provider.dart';
 import '../../utils/theme.dart';
+import 'reminder_settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -66,7 +67,9 @@ class ProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
               child: Column(
                 children: [
-                  _buildSettingsTile(context, Iconsax.notification, 'Notifications', () {}),
+                  _buildSettingsTile(context, Iconsax.notification, 'Reminders', () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReminderSettingsScreen()));
+                  }),
                   _buildSettingsTile(context, Iconsax.moon, 'Dark Mode', () => userProvider.toggleDarkMode(), trailing: Switch(value: user?.isDarkMode ?? false, onChanged: (_) => userProvider.toggleDarkMode(), activeColor: AppTheme.primaryPink)),
                   _buildSettingsTile(context, Iconsax.document, 'Privacy Policy', () {}),
                   _buildSettingsTile(context, Iconsax.info_circle, 'About', () {}),

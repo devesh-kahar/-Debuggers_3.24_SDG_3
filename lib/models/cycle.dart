@@ -116,6 +116,39 @@ class Cycle extends HiveObject {
     }
     return 5; // Safe days
   }
+
+  // JSON serialization
+  factory Cycle.fromJson(Map<String, dynamic> json) {
+    return Cycle(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      startDate: DateTime.parse(json['startDate']),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      cycleLength: json['cycleLength'] ?? 28,
+      periodLength: json['periodLength'] ?? 5,
+      ovulationDate: json['ovulationDate'] != null ? DateTime.parse(json['ovulationDate']) : null,
+      periodDays: (json['periodDays'] as List?)?.map((d) => DateTime.parse(d)).toList() ?? [],
+      fertileDays: (json['fertileDays'] as List?)?.map((d) => DateTime.parse(d)).toList() ?? [],
+      isActive: json['isActive'] ?? true,
+      notes: json['notes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'cycleLength': cycleLength,
+      'periodLength': periodLength,
+      'ovulationDate': ovulationDate?.toIso8601String(),
+      'periodDays': periodDays.map((d) => d.toIso8601String()).toList(),
+      'fertileDays': fertileDays.map((d) => d.toIso8601String()).toList(),
+      'isActive': isActive,
+      'notes': notes,
+    };
+  }
 }
 
 @HiveType(typeId: 2)
@@ -178,4 +211,42 @@ class DailyLog extends HiveObject {
     this.notes,
     required this.createdAt,
   });
+
+  // JSON serialization
+  factory DailyLog.fromJson(Map<String, dynamic> json) {
+    return DailyLog(
+      id: json['_id'] ?? json['id'],
+      oderId: json['oderId'] ?? '',
+      date: DateTime.parse(json['date']),
+      bbtTemperature: (json['bbtTemperature'] as num?)?.toDouble(),
+      cervicalMucus: json['cervicalMucus'],
+      flowIntensity: json['flowIntensity'],
+      hadIntercourse: json['hadIntercourse'],
+      usedProtection: json['usedProtection'],
+      symptoms: List<String>.from(json['symptoms'] ?? []),
+      moodRating: json['moodRating'],
+      energyLevel: json['energyLevel'],
+      hoursSlept: (json['hoursSlept'] as num?)?.toDouble(),
+      notes: json['notes'],
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'oderId': oderId,
+      'date': date.toIso8601String(),
+      'bbtTemperature': bbtTemperature,
+      'cervicalMucus': cervicalMucus,
+      'flowIntensity': flowIntensity,
+      'hadIntercourse': hadIntercourse,
+      'usedProtection': usedProtection,
+      'symptoms': symptoms,
+      'moodRating': moodRating,
+      'energyLevel': energyLevel,
+      'hoursSlept': hoursSlept,
+      'notes': notes,
+    };
+  }
 }

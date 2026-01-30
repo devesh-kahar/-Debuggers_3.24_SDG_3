@@ -5,11 +5,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/user_provider.dart';
 import '../../providers/pregnancy_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../utils/theme.dart';
 import '../../widgets/risk_gauge.dart';
 import '../../widgets/quick_action_card.dart';
 import '../../widgets/vitals_card.dart';
 import '../../widgets/baby_size_card.dart';
+import '../../widgets/gamification_widgets.dart';
 
 class PregnancyHome extends StatelessWidget {
   const PregnancyHome({super.key});
@@ -18,6 +20,7 @@ class PregnancyHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final pregnancyProvider = context.watch<PregnancyProvider>();
+    final gamificationProvider = context.watch<GamificationProvider>();
     final user = userProvider.user;
 
     return Scaffold(
@@ -31,24 +34,33 @@ class PregnancyHome extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, ${user?.name ?? 'Mama'} 💕',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Week ${pregnancyProvider.currentWeek} of 40',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textLight,
-                          ),
-                        ).animate().fadeIn(delay: 200.ms),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${user?.name ?? 'Mama'} 💕',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Week ${pregnancyProvider.currentWeek} of 40',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textLight,
+                            ),
+                          ).animate().fadeIn(delay: 200.ms),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    // Streak Counter
+                    StreakWidget(
+                      currentStreak: gamificationProvider.currentStreak,
+                      isCompact: true,
+                    ).animate().fadeIn(delay: 150.ms).scale(begin: const Offset(0.8, 0.8)),
+                    const SizedBox(width: 8),
                     _buildModeToggle(context, userProvider),
                   ],
                 ),
@@ -252,6 +264,34 @@ class PregnancyHome extends StatelessWidget {
                 ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1),
               ),
             ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Gamification Summary Card
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Progress',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ).animate().fadeIn(delay: 1150.ms),
+                    const SizedBox(height: 16),
+                    GamificationSummaryCard(
+                      streak: gamificationProvider.currentStreak,
+                      level: gamificationProvider.level,
+                      levelTitle: gamificationProvider.levelTitle,
+                      points: gamificationProvider.totalPoints,
+                      recentBadges: gamificationProvider.recentBadges,
+                    ).animate().fadeIn(delay: 1200.ms).slideY(begin: 0.1),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
             // Emergency Button
             SliverToBoxAdapter(
@@ -608,6 +648,7 @@ class _BPLoggerSheetState extends State<_BPLoggerSheet> {
           ElevatedButton(
             onPressed: () {
               widget.provider.logBloodPressure(systolic, diastolic);
+              context.read<GamificationProvider>().recordLog(LogType.vitals);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Blood pressure logged! ✓')),
@@ -693,6 +734,7 @@ class _WeightLoggerSheetState extends State<_WeightLoggerSheet> {
           ElevatedButton(
             onPressed: () {
               widget.provider.logWeight(weight);
+              context.read<GamificationProvider>().recordLog(LogType.vitals);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Weight logged! ✓')),
@@ -801,6 +843,7 @@ class _KickCounterSheetState extends State<_KickCounterSheet> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
+              context.read<GamificationProvider>().recordLog(LogType.checkIn);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('$kickCount kicks logged! ✓')),
@@ -890,6 +933,7 @@ class _ContractionTimerSheetState extends State<_ContractionTimerSheet> {
                 isTiming = !isTiming;
                 if (!isTiming) {
                   // Save contraction
+                  context.read<GamificationProvider>().recordLog(LogType.checkIn);
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Contraction ($seconds sec) logged! ✓')),

@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/cycle.dart';
 import '../models/symptom.dart';
+import '../services/api_service.dart';
 
 class CycleProvider extends ChangeNotifier {
+  final ApiService _api = ApiService();
   Cycle? _currentCycle;
   List<Cycle> _cycleHistory = [];
   List<DailyLog> _dailyLogs = [];
   List<Symptom> _symptoms = [];
   final _uuid = const Uuid();
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
 
   Cycle? get currentCycle => _currentCycle;
   List<Cycle> get cycleHistory => _cycleHistory;
@@ -31,55 +36,49 @@ class CycleProvider extends ChangeNotifier {
   DateTime? get predictedOvulationDate => _currentCycle?.ovulationDate ?? 
       _currentCycle?.startDate.add(Duration(days: (_currentCycle?.cycleLength ?? 28) - 14));
 
-  // Initialize with demo data
-  void initDemoData(DateTime lastPeriodDate, int cycleLength, int periodLength) {
-    _currentCycle = Cycle(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      startDate: lastPeriodDate,
-      cycleLength: cycleLength,
-      periodLength: periodLength,
-      ovulationDate: lastPeriodDate.add(Duration(days: cycleLength - 14)),
-      isActive: true,
-    );
+  // Fetch cycle data from backend
+  Future<void> fetchCycleData() async {
+    _isLoading = true;
+    notifyListeners();
 
-    // Add some demo daily logs
-    for (int i = 0; i < 14; i++) {
-      final date = lastPeriodDate.add(Duration(days: i));
-      _dailyLogs.add(DailyLog(
-        id: _uuid.v4(),
-        oderId: 'demo-user-001',
-        date: date,
-        bbtTemperature: 36.2 + (i > 10 ? 0.4 : 0), // Temperature rise after ovulation
-        cervicalMucus: i < 5 ? 'dry' : (i < 10 ? 'creamy' : 'eggWhite'),
-        flowIntensity: i < 5 ? (i < 2 ? 'heavy' : 'medium') : null,
-        symptoms: i < 5 ? ['Cramping'] : [],
-        moodRating: 3 + (i % 3),
-        energyLevel: 5 + (i % 4),
-        createdAt: date,
-      ));
+    try {
+      final cycleResponse = await _api.dio.get('/cycle/active');
+      if (cycleResponse.statusCode == 200 && cycleResponse.data != null) {
+        _currentCycle = Cycle.fromJson(cycleResponse.data);
+      }
+
+      final logsResponse = await _api.dio.get('/cycle/logs');
+      if (logsResponse.statusCode == 200) {
+        _dailyLogs = (logsResponse.data as List).map((l) => DailyLog.fromJson(l)).toList();
+      }
+
+      final historyResponse = await _api.dio.get('/cycle/history');
+      if (historyResponse.statusCode == 200) {
+        _cycleHistory = (historyResponse.data as List).map((c) => Cycle.fromJson(c)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching cycle data: $e');
     }
 
+    _isLoading = false;
     notifyListeners();
   }
 
   // Start new cycle (period started)
-  void startNewCycle(DateTime startDate) {
-    if (_currentCycle != null) {
-      _currentCycle!.isActive = false;
-      _currentCycle!.endDate = startDate.subtract(const Duration(days: 1));
-      _cycleHistory.add(_currentCycle!);
-    }
+  Future<void> startNewCycle(DateTime startDate) async {
+    try {
+      final response = await _api.dio.post('/cycle', data: {
+        'startDate': startDate.toIso8601String(),
+        'cycleLength': _calculateAverageCycleLength(),
+        'periodLength': 5,
+      });
 
-    _currentCycle = Cycle(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      startDate: startDate,
-      cycleLength: _calculateAverageCycleLength(),
-      periodLength: 5,
-      isActive: true,
-    );
-    notifyListeners();
+      if (response.statusCode == 201) {
+        await fetchCycleData(); // Refresh history and current cycle
+      }
+    } catch (e) {
+      debugPrint('Error starting new cycle: $e');
+    }
   }
 
   // Calculate average cycle length from history
@@ -90,7 +89,7 @@ class CycleProvider extends ChangeNotifier {
   }
 
   // Log daily entry
-  void logDailyEntry({
+  Future<void> logDailyEntry({
     double? bbtTemperature,
     String? cervicalMucus,
     String? flowIntensity,
@@ -101,70 +100,55 @@ class CycleProvider extends ChangeNotifier {
     int? energyLevel,
     double? hoursSlept,
     String? notes,
-  }) {
-    final today = DateTime.now();
-    final normalizedDate = DateTime(today.year, today.month, today.day);
-    
-    // Check if entry exists for today
-    final existingIndex = _dailyLogs.indexWhere((log) {
-      final logDate = DateTime(log.date.year, log.date.month, log.date.day);
-      return logDate == normalizedDate;
-    });
+  }) async {
+    final entryData = {
+      'date': DateTime.now().toIso8601String(),
+      'bbtTemperature': bbtTemperature,
+      'cervicalMucus': cervicalMucus,
+      'flowIntensity': flowIntensity,
+      'hadIntercourse': hadIntercourse,
+      'usedProtection': usedProtection,
+      'symptoms': symptoms,
+      'moodRating': moodRating,
+      'energyLevel': energyLevel,
+      'hoursSlept': hoursSlept,
+      'notes': notes,
+    };
 
-    if (existingIndex >= 0) {
-      // Update existing entry
-      final existing = _dailyLogs[existingIndex];
-      _dailyLogs[existingIndex] = DailyLog(
-        id: existing.id,
-        oderId: existing.oderId,
-        date: existing.date,
-        bbtTemperature: bbtTemperature ?? existing.bbtTemperature,
-        cervicalMucus: cervicalMucus ?? existing.cervicalMucus,
-        flowIntensity: flowIntensity ?? existing.flowIntensity,
-        hadIntercourse: hadIntercourse ?? existing.hadIntercourse,
-        usedProtection: usedProtection ?? existing.usedProtection,
-        symptoms: symptoms ?? existing.symptoms,
-        moodRating: moodRating ?? existing.moodRating,
-        energyLevel: energyLevel ?? existing.energyLevel,
-        hoursSlept: hoursSlept ?? existing.hoursSlept,
-        notes: notes ?? existing.notes,
-        createdAt: existing.createdAt,
-      );
-    } else {
-      // Create new entry
-      _dailyLogs.add(DailyLog(
-        id: _uuid.v4(),
-        oderId: 'demo-user-001',
-        date: normalizedDate,
-        bbtTemperature: bbtTemperature,
-        cervicalMucus: cervicalMucus,
-        flowIntensity: flowIntensity,
-        hadIntercourse: hadIntercourse,
-        usedProtection: usedProtection,
-        symptoms: symptoms ?? [],
-        moodRating: moodRating,
-        energyLevel: energyLevel,
-        hoursSlept: hoursSlept,
-        notes: notes,
-        createdAt: DateTime.now(),
-      ));
+    try {
+      final response = await _api.dio.post('/cycle/logs', data: entryData);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final log = DailyLog.fromJson(response.data);
+        final index = _dailyLogs.indexWhere((l) => l.id == log.id);
+        if (index >= 0) {
+          _dailyLogs[index] = log;
+        } else {
+          _dailyLogs.add(log);
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging daily entry: $e');
     }
-    notifyListeners();
   }
 
   // Log symptom
-  void logSymptom(String type, int severity, {String category = 'physical', bool isWarning = false}) {
-    _symptoms.add(Symptom(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      date: DateTime.now(),
-      type: type,
-      severity: severity,
-      category: category,
-      isWarning: isWarning,
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+  Future<void> logSymptom(String type, int severity, {String category = 'physical', bool isWarning = false}) async {
+    try {
+      final response = await _api.dio.post('/cycle/symptoms', data: {
+        'type': type,
+        'severity': severity,
+        'category': category,
+        'isWarning': isWarning,
+        'date': DateTime.now().toIso8601String(),
+      });
+      if (response.statusCode == 201) {
+        _symptoms.add(Symptom.fromJson(response.data));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error logging symptom: $e');
+    }
   }
 
   // Get daily log for date

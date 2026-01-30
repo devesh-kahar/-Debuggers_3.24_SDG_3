@@ -5,6 +5,7 @@ import 'package:iconsax/iconsax.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../utils/theme.dart';
 
 class AIChatScreen extends StatefulWidget {
@@ -125,6 +126,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     if (text.trim().isEmpty) return;
     
     chatProvider.addUserMessage(text);
+    context.read<GamificationProvider>().recordLog(LogType.askAI);
     _controller.clear();
     
     chatProvider.generateAIResponse(

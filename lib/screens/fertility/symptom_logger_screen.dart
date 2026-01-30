@@ -175,7 +175,7 @@ class _SymptomLoggerScreenState extends State<SymptomLoggerScreen> {
 
   void _saveLog(BuildContext context) {
     final cycleProvider = context.read<CycleProvider>();
-    cycleProvider.logDailyEntry(cervicalMucus: _selectedMucus, sleepHours: _sleepHours, energyLevel: _energyLevel.toInt(), notes: _notes);
+    cycleProvider.logDailyEntry(cervicalMucus: _selectedMucus, hoursSlept: _sleepHours, energyLevel: _energyLevel.toInt(), notes: _notes);
     for (final symptom in _selectedSymptoms) {
       cycleProvider.logSymptom(symptom, 5);
     }

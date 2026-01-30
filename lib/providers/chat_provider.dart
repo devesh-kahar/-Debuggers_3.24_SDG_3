@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
+import '../services/api_service.dart';
 
 class ChatProvider extends ChangeNotifier {
+  final ApiService _api = ApiService();
   List<ChatMessage> _messages = [];
   bool _isLoading = false;
   final _uuid = const Uuid();
@@ -22,7 +24,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Add AI response (simulated for hackathon)
+  // Add AI response from backend
   Future<void> generateAIResponse(String userMessage, {
     required String mode,
     int? pregnancyWeek,
@@ -32,24 +34,52 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final response = await _api.dio.post('/ai/chat', data: {
+        'message': userMessage,
+        'context': {
+          'mode': mode,
+          'pregnancyWeek': pregnancyWeek,
+          'cycleDay': cycleDay,
+          'fertilityScore': fertilityScore,
+        }
+      });
 
-    String response = _generateContextualResponse(
-      userMessage: userMessage,
-      mode: mode,
-      pregnancyWeek: pregnancyWeek,
-      cycleDay: cycleDay,
-      fertilityScore: fertilityScore,
-    );
+      if (response.statusCode == 200) {
+        final data = response.data;
+        // Backend returns { userMessage: {...}, aiMessage: {...} }
+        if (data.containsKey('aiMessage')) {
+           final aiData = data['aiMessage'];
+           // Backend uses 'isAI', frontend uses 'isUser'. Map them.
+           // If isAI is true, isUser should be false.
+           if (aiData['isAI'] == true) {
+             aiData['isUser'] = false;
+           }
+           
+           final aiMessage = ChatMessage.fromJson(aiData);
+           _messages.add(aiMessage);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error generating AI response: $e');
+      
+      // Fallback to local logic if server fails
+      final localResponse = _generateContextualResponse(
+        userMessage: userMessage,
+        mode: mode,
+        pregnancyWeek: pregnancyWeek,
+        cycleDay: cycleDay,
+        fertilityScore: fertilityScore,
+      );
 
-    _messages.add(ChatMessage(
-      id: _uuid.v4(),
-      oderId: 'demo-user-001',
-      content: response,
-      isUser: false,
-      timestamp: DateTime.now(),
-    ));
+      _messages.add(ChatMessage(
+        id: _uuid.v4(),
+        oderId: 'user',
+        content: localResponse,
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    }
 
     _isLoading = false;
     notifyListeners();
